@@ -1,0 +1,23 @@
+# Update the system
+sudo apt-get update && sudo apt-get upgrade -y
+
+# Install Python 3 and pip if not already installed
+sudo apt-get install -y python3 python3-pip
+
+# Install essential Python libraries for the companion system
+pip3 install pyttsx3 requests Pillow inky-python scapy nmap
+
+# Install TTS and speech libraries
+sudo apt-get install -y espeak ffmpeg libespeak1
+
+# Install Nmap for network scanning
+sudo apt-get install -y nmap
+
+# Install Git for fetching updates from repositories
+sudo apt-get install -y git
+
+# Install utilities for network monitoring and debugging
+sudo apt-get install -y tcpdump wireshark
+
+# Install libraries needed for GPIO interaction (if using sensors or hardware inputs)
+sudo apt-get install -y python3-rpi.gpio
