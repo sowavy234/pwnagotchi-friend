@@ -1,0 +1,2 @@
+sudo systemctl enable pwnagotchi-companion.service
+sudo systemctl start pwnagotchi-companion.service
