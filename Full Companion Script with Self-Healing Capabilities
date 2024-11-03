@@ -1,0 +1,103 @@
+import os
+import shutil
+import subprocess
+import requests
+import time
+from PIL import Image, ImageDraw, ImageFont
+import pyttsx3
+import logging
+import traceback
+
+# Configure logging
+logging.basicConfig(filename='/var/log/pwnagotchi_companion.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Initialize text-to-speech engine
+engine = pyttsx3.init()
+
+def log_and_speak(message):
+    """Logs a message and speaks it aloud."""
+    logging.info(message)
+    engine.say(message)
+    engine.runAndWait()
+
+def create_file(file_path, content):
+    """Creates a file and writes content to it."""
+    try:
+        with open(file_path, 'w') as file:
+            file.write(content)
+        log_and_speak(f"File created at {file_path}")
+    except Exception as e:
+        logging.error(f"Failed to create file: {e}")
+        troubleshoot_error(f"File creation issue at {file_path}")
+
+def install_dependency(package_name):
+    """Installs a Python package using pip."""
+    try:
+        subprocess.run(['pip3', 'install', package_name], check=True)
+        log_and_speak(f"Dependency {package_name} installed successfully.")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to install {package_name}: {e}")
+        troubleshoot_error(f"Dependency installation failed for {package_name}")
+
+def replace_file(source, destination):
+    """Replaces a file at the destination with the source."""
+    try:
+        shutil.copyfile(source, destination)
+        log_and_speak(f"File {source} replaced {destination} successfully.")
+    except Exception as e:
+        logging.error(f"Error replacing file: {e}")
+        troubleshoot_error(f"File replacement issue for {source} to {destination}")
+
+def troubleshoot_error(issue):
+    """Attempts to troubleshoot and fix errors autonomously."""
+    log_and_speak(f"Troubleshooting initiated for issue: {issue}")
+    try:
+        # Check Internet connection
+        response = subprocess.run(['ping', '-c', '3', '8.8.8.8'], stdout=subprocess.PIPE)
+        if response.returncode != 0:
+            log_and_speak("Internet connection problem detected. Reconnecting...")
+            subprocess.run(['sudo', 'ifdown', 'wlan0'])
+            subprocess.run(['sudo', 'ifup', 'wlan0'])
+        else:
+            log_and_speak("Internet connection is stable.")
+
+        # Reinstall or update problematic packages
+        if "Dependency" in issue:
+            package_name = issue.split()[-1]
+            log_and_speak(f"Reinstalling {package_name}...")
+            subprocess.run(['pip3', 'install', '--upgrade', package_name], check=True)
+        
+        log_and_speak("Troubleshooting completed.")
+    except Exception as e:
+        logging.error(f"Troubleshooting failed: {e}")
+        log_and_speak("Troubleshooting failed. Manual intervention may be required.")
+
+def display_text_on_eink(text, font_path="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"):
+    """Displays text on an E-Ink display."""
+    try:
+        from inky import InkyPHAT  # Import here to avoid issues if not installed
+        inky_display = InkyPHAT('black')
+        image = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT), 255)
+        draw = ImageDraw.Draw(image)
+        font = ImageFont.truetype(font_path, 18)
+        draw.text((10, 10), text, font=font, fill=0)
+        inky_display.set_image(image)
+        inky_display.show()
+        log_and_speak("Displayed message on E-Ink screen.")
+    except ImportError as e:
+        logging.error(f"Inky library not installed: {e}")
+        troubleshoot_error("Inky library issue.")
+    except Exception as e:
+        logging.error(f"Error displaying text: {e}")
+        troubleshoot_error("E-Ink display issue.")
+
+# Example setup and run
+try:
+    create_file('/path/to/pwnagotchi_plugin.py', '# Pwnagotchi plugin code...')
+    install_dependency('nmap')
+    replace_file('/mnt/data/auto-update.py', '/path/to/updated_auto-update.py')
+    display_text_on_eink("Pwnagotchi companion is running.")
+    log_and_speak("Companion setup complete. Monitoring Pwnagotchi.")
+except Exception as e:
+    logging.error(f"An error occurred: {traceback.format_exc()}")
+    troubleshoot_error("Critical error in main setup.")
